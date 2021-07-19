@@ -1,0 +1,59 @@
+CREATE SCHEMA `healthcare_bed_data` ; -- creating a new schema
+CREATE TABLE IF NOT EXISTS `healthcare_bed_data`.`bed_type` (
+  `bed_id` INT NOT NULL,
+  `bed_code` VARCHAR(45) NULL,
+  `bed_desc` VARCHAR(100) NULL,
+  PRIMARY KEY (`bed_id`))
+ENGINE = InnoDB;
+CREATE TABLE `healthcare_bed_data`.`business` ( -- creating business table and assigning primary key to 'ims_org_id'
+  `ims_org_id` VARCHAR(45) NOT NULL,
+  `business_name` VARCHAR(200) NULL,
+  `ttl_license_beds` INT NULL,
+  `ttl_census_beds` INT NULL,
+  `ttl_staffed_beds` INT NULL,
+  `bed_cluster_id` INT NULL,
+  PRIMARY KEY (`ims_org_id`)) 
+ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `healthcare_bed_data`.`bed_fact` ( -- creating table business and assigning foreign key to 'bed_id' and 'ims_org_id'
+  `ims_org_id` VARCHAR(45) NULL,
+  `bed_id` INT NULL,
+  `license_beds` INT NULL,
+  `census_beds` INT NULL,
+  `staffed_beds` INT NULL,
+  INDEX `fk_bed_fact_business1_idx` (`ims_org_id` ASC) VISIBLE,
+  INDEX `fk_bed_fact_bed_type_idx` (`bed_id` ASC) VISIBLE,
+  CONSTRAINT `bed_id`
+    FOREIGN KEY (`bed_id`) -- foriegn key 
+    REFERENCES `healthcare_bed_data`.`bed_type` (`bed_id`) -- referencing the foreign key
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION, 
+  CONSTRAINT `ims_org_id`
+    FOREIGN KEY (`ims_org_id`) -- foriegn key
+    REFERENCES `healthcare_bed_data`.`business` (`ims_org_id`) -- referencing the second foreign key
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION) 
+ENGINE = InnoDB;
+
+-- Question 1:
+SELECT business.business_name AS healthcare_centre,
+SUM(bed_fact.license_beds) AS licensebed_sum
+FROM business INNER JOIN bed_fact 
+ON business.ims_org_id = bed_fact.ims_org_id
+WHERE bed_fact.bed_id IN(4,15) 
+ORDER BY SUM(bed_fact.license_beds) DESC LIMIT 10;
+-- Question 2:
+SELECT business.business_name AS healthcare_centre,
+SUM(bed_fact.staffed_beds) AS staffbed_sum
+FROM business INNER JOIN bed_fact 
+ON business.ims_org_id = bed_fact.ims_org_id
+WHERE bed_fact.bed_id IN(4,15) 
+GROUP BY business.business_name
+ORDER BY SUM(bed_fact.staffed_beds) DESC LIMIT 10;
+-- Question 3:
+SELECT business.business_name AS healthcare_centre,
+SUM(bed_fact.census_beds) AS censusbed_sum
+FROM business INNER JOIN bed_fact 
+ON business.ims_org_id = bed_fact.ims_org_id
+WHERE bed_fact.bed_id IN(4,15) 
+GROUP BY business.business_name
+ORDER BY SUM(bed_fact.census_beds) DESC LIMIT 10;
